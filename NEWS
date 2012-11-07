@@ -172,6 +172,7 @@ NEWS
   * Enable linux-aio-sendfile for testing in autotools too
   * [mod_auth] Fix signedness error in http_auth (fixes #2370, CVE-2011-4362)
   * buffer_caseless_compare: always convert letters to lowercase to get transitive results, fixing array lookups (fixes #2405)
+  * fix :port handling in $HTTP["host"] checks (fixes #2135. thx liming)
 
 - 1.5.0-r19.. -
   * -F option added for spawn-fcgi
