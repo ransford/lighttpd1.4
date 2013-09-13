@@ -59,13 +59,6 @@ int inet_aton(const char *cp, struct in_addr *inp);
 #include <netdb.h>
 #endif /* !_WIN32 */
 
-#ifdef HAVE_INET_NTOP
-/* only define it if it isn't defined yet */
-#ifndef HAVE_IPV6
-#define HAVE_IPV6
-#endif
-#endif
-
 typedef union {
 #ifdef HAVE_IPV6
 	struct sockaddr_in6 ipv6;
