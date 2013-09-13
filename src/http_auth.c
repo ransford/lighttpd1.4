@@ -894,7 +894,6 @@ int http_auth_basic_check(server *srv, connection *con, mod_auth_plugin_data *p,
 	realm = (data_string *)array_get_element(req, CONST_STR_LEN("realm"));
 
 	username = buffer_init();
-	password = buffer_init();
 
 	if (!base64_decode(username, realm_str)) {
 		log_error_write(srv, __FILE__, __LINE__, "sb", "decodeing base64-string failed", username);
@@ -914,6 +913,8 @@ int http_auth_basic_check(server *srv, connection *con, mod_auth_plugin_data *p,
 	*pw++ = '\0';
 
 	username->used = pw - username->ptr;
+
+	password = buffer_init();
 
 	/* copy password to r1 */
 	if (http_auth_get_password(srv, p, username, realm->value, password)) {
