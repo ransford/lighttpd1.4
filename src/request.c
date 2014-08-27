@@ -992,6 +992,28 @@ int http_request_parse(server *srv, connection *con) {
 									array_insert_unique(con->request.headers, (data_unset *)ds);
 									return 0;
 								}
+							} else if (cmp > 0 && 0 == (cmp = buffer_caseless_compare(CONST_BUF_LEN(ds->key), CONST_STR_LEN("X-SAP-Approx")))) {
+								con->use_sap = 1;
+
+								/* SAP: tokenize X-SAP-Approx values */
+								array *vals = srv->split_vals;
+								array_reset(vals);
+								http_request_split_value(vals, ds->value);
+								size_t vi;
+								for (vi = 0; vi < vals->used; vi++) {
+									data_string *dsv = (data_string *)vals->data[vi];
+									data_string *ds_dst;
+									if (NULL == (ds_dst = (data_string *)array_get_unused_element(con->sap_approx_types, TYPE_STRING))) {
+										ds_dst = data_string_init();
+									}
+									log_error_write(srv, __FILE__, __LINE__, "sS",
+											"Approx type", dsv->value->ptr);
+
+									buffer_copy_string_buffer(ds_dst->key, dsv->key);
+									buffer_copy_string_buffer(ds_dst->value, dsv->value);
+								}
+
+								return 0;
 							}
 
 							if (ds) array_insert_unique(con->request.headers, (data_unset *)ds);

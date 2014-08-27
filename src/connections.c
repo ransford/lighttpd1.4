@@ -693,6 +693,8 @@ connection *connection_init(server *srv) {
 	con->response.headers     = array_init();
 	con->environment     = array_init();
 
+	con->sap_approx_types = array_init();
+
 	/* init plugin specific connection structures */
 
 	con->plugin_ctx = calloc(1, (srv->plugins.used + 1) * sizeof(void *));
@@ -718,6 +720,7 @@ void connections_free(server *srv) {
 		array_free(con->request.headers);
 		array_free(con->response.headers);
 		array_free(con->environment);
+		array_free(con->sap_approx_types);
 
 #define CLEAN(x) \
 	buffer_free(con->x);
@@ -840,6 +843,10 @@ int connection_reset(server *srv, connection *con) {
 	array_reset(con->response.headers);
 	array_reset(con->environment);
 
+	/* SAP: reset */
+	con->use_sap = 0;
+	array_reset(con->sap_approx_types);
+
 	chunkqueue_reset(con->write_queue);
 	chunkqueue_reset(con->request_content_queue);
 
@@ -862,6 +869,8 @@ int connection_reset(server *srv, connection *con) {
 
 	con->header_len = 0;
 	con->in_error_handler = 0;
+
+	con->use_sap = 0;
 
 	config_setup_connection(srv, con);
 

@@ -448,6 +448,9 @@ typedef struct {
 	etag_flags_t etag_flags;
 
 	int conditional_is_valid[COMP_LAST_ELEMENT]; 
+
+	int use_sap;
+	array *sap_approx_types;
 } connection;
 
 typedef struct {
@@ -534,6 +537,7 @@ typedef struct server_socket {
 	int       fde_ndx;
 
 	unsigned short is_ssl;
+	unsigned short is_approx;
 
 	buffer *srv_token;
 

@@ -1086,6 +1086,8 @@ int network_write_chunkqueue(server *srv, connection *con, chunkqueue *cq, off_t
 		ret = srv->network_ssl_backend_write(srv, con, con->ssl, cq, max_bytes);
 #endif
 	} else {
+		/* TODO-SAP: network_backend_write should establish a new UDP-Lite
+		 * connection */
 		ret = srv->network_backend_write(srv, con, con->fd, cq, max_bytes);
 	}
 
