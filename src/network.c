@@ -1040,6 +1040,7 @@ int network_write_chunkqueue(server *srv, connection *con, chunkqueue *cq, off_t
 	int corked = 0;
 #endif
 	server_socket *srv_socket = con->srv_socket;
+	log_error_write(srv, __FILE__, __LINE__, "s", "network_write_chunkqueue");
 
 	if (con->conf.global_kbytes_per_second) {
 		off_t limit = con->conf.global_kbytes_per_second * 1024 - *(con->conf.global_bytes_per_second_cnt_ptr);
@@ -1088,6 +1089,7 @@ int network_write_chunkqueue(server *srv, connection *con, chunkqueue *cq, off_t
 	} else {
 		/* TODO-SAP: network_backend_write should establish a new UDP-Lite
 		 * connection */
+		log_error_write(srv, __FILE__, __LINE__, "s", "about to network_backend_write");
 		ret = srv->network_backend_write(srv, con, con->fd, cq, max_bytes);
 	}
 

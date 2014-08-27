@@ -26,6 +26,7 @@
 
 int network_write_chunkqueue_write(server *srv, connection *con, int fd, chunkqueue *cq, off_t max_bytes) {
 	chunk *c;
+	log_error_write(srv, __FILE__, __LINE__, "s", "network_write_chunkqueue_write");
 
 	for(c = cq->first; (max_bytes > 0) && (NULL != c); c = c->next) {
 		int chunk_finished = 0;
