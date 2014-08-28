@@ -325,6 +325,8 @@ typedef struct {
 	X509 *ssl_pemfile_x509;
 	STACK_OF(X509_NAME) *ssl_ca_file_cert_names;
 #endif
+
+	unsigned short sap_enabled;
 } specific_config;
 
 /* the order of the items should be the same as they are processed
@@ -449,7 +451,7 @@ typedef struct {
 
 	int conditional_is_valid[COMP_LAST_ELEMENT]; 
 
-	int use_sap;
+	short int sap_enabled;
 	array *sap_approx_types;
 } connection;
 
@@ -537,7 +539,7 @@ typedef struct server_socket {
 	int       fde_ndx;
 
 	unsigned short is_ssl;
-	unsigned short is_approx;
+	unsigned short sap_is_approx;
 
 	buffer *srv_token;
 

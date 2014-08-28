@@ -844,7 +844,7 @@ int connection_reset(server *srv, connection *con) {
 	array_reset(con->environment);
 
 	/* SAP: reset */
-	con->use_sap = 0;
+	con->sap_enabled = 0;
 	array_reset(con->sap_approx_types);
 
 	chunkqueue_reset(con->write_queue);
@@ -869,8 +869,6 @@ int connection_reset(server *srv, connection *con) {
 
 	con->header_len = 0;
 	con->in_error_handler = 0;
-
-	con->use_sap = 0;
 
 	config_setup_connection(srv, con);
 

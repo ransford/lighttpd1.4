@@ -118,6 +118,7 @@ static int config_insert(server *srv) {
 		{ "server.groupid",              "use server.groupname instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
 		{ "server.use-keep-alive",       "use server.max-keep-alive-requests = 0 instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
 		{ "server.force-lower-case-files",       "use server.force-lowercase-filenames instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
+		{ "sap.enabled",                 NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 77 */
 
 		{ NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
 	};
@@ -206,6 +207,8 @@ static int config_insert(server *srv) {
 		s->ssl_verifyclient_export_cert = 0;
 		s->ssl_disable_client_renegotiation = 1;
 
+		s->sap_enabled = 1;
+
 		cv[2].destination = s->errorfile_prefix;
 
 		cv[7].destination = s->server_tag;
@@ -265,6 +268,8 @@ static int config_insert(server *srv) {
 		cv[59].destination = s->ssl_verifyclient_username;
 		cv[60].destination = &(s->ssl_verifyclient_export_cert);
 		cv[65].destination = &(s->ssl_disable_client_renegotiation);
+
+		cv[77].destination = &(s->sap_enabled);
 
 		srv->config_storage[i] = s;
 
@@ -363,6 +368,8 @@ int config_setup_connection(server *srv, connection *con) {
 	PATCH(ssl_verifyclient_username);
 	PATCH(ssl_verifyclient_export_cert);
 	PATCH(ssl_disable_client_renegotiation);
+
+	PATCH(sap_enabled);
 
 	return 0;
 }
@@ -481,6 +488,8 @@ int config_patch_connection(server *srv, connection *con, comp_key_t comp) {
 				PATCH(ssl_verifyclient_export_cert);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.disable-client-renegotiation"))) {
 				PATCH(ssl_disable_client_renegotiation);
+			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("sap.enabled"))) {
+				PATCH(sap_enabled);
 			}
 		}
 	}
