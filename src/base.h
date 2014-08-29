@@ -225,6 +225,8 @@ typedef struct {
 #endif
 
 	buffer *content_type;
+
+	unsigned short is_approx;
 } stat_cache_entry;
 
 typedef struct {

@@ -992,8 +992,11 @@ int http_request_parse(server *srv, connection *con) {
 									array_insert_unique(con->request.headers, (data_unset *)ds);
 									return 0;
 								}
-							} else if (con->conf.sap_enabled && cmp > 0 && 0 == (cmp = buffer_caseless_compare(CONST_BUF_LEN(ds->key), CONST_STR_LEN("X-SAP-Approx")))) {
+							} else if (con->conf.sap_enabled && cmp > 0 &&
+									0 == (cmp = buffer_caseless_compare(CONST_BUF_LEN(ds->key),
+											CONST_STR_LEN("X-SAP-Approx")))) {
 								con->sap_enabled = 1;
+								array_reset(con->sap_approx_types);
 
 								/* SAP: tokenize X-SAP-Approx values */
 								array *vals = srv->split_vals;
@@ -1008,10 +1011,14 @@ int http_request_parse(server *srv, connection *con) {
 									}
 									log_error_write(srv, __FILE__, __LINE__, "sS",
 											"Approx type", dsv->value->ptr);
-
+									log_error_write(srv, __FILE__, __LINE__, "sbb",
+											"key/value:", dsv->key, dsv->value);
 									buffer_copy_string_buffer(ds_dst->key, dsv->key);
 									buffer_copy_string_buffer(ds_dst->value, dsv->value);
+									array_insert_unique(con->sap_approx_types, (data_unset *)ds_dst);
+									log_error_write(srv, __FILE__, __LINE__, "sd", "now used:", con->sap_approx_types->used);
 								}
+								log_error_write(srv, __FILE__, __LINE__, "sd", "now used:", con->sap_approx_types->used);
 
 								return 0;
 							}

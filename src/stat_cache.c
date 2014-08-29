@@ -131,6 +131,7 @@ static stat_cache_entry * stat_cache_entry_init(void) {
 	sce->name = buffer_init();
 	sce->etag = buffer_init();
 	sce->content_type = buffer_init();
+	sce->is_approx = 0;
 
 	return sce;
 }
@@ -628,6 +629,32 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 				if (0 == strncasecmp(name->ptr + name->used - type->used, type->ptr, type->used - 1)) {
 					buffer_copy_string_buffer(sce->content_type, ds->value);
 					break;
+				}
+			}
+
+			/* SAP: set approx based on mimetype */
+			if (con->sap_enabled) {
+				buffer *ctype = sce->content_type;
+				log_error_write(srv, __FILE__, __LINE__, "sbs", "checking whether mimetype",
+						ctype, " is approx");
+				log_error_write(srv, __FILE__, __LINE__, "ds", con->sap_approx_types->used, " to check");
+				for (k = 0; k < con->sap_approx_types->used; k++) {
+					data_string *ds = (data_string *)con->sap_approx_types->data[k];
+					buffer *approxtype = ds->value;
+					log_error_write(srv, __FILE__, __LINE__, "sb", "checking", approxtype);
+
+					if (approxtype->used == 0) continue;
+
+					/* check if the right side is the same */
+					if (approxtype->used > ctype->used) continue;
+
+					if (0 == strncasecmp(ctype->ptr + ctype->used - approxtype->used, approxtype->ptr, approxtype->used - 1)) {
+						log_error_write(srv, __FILE__, __LINE__, "s", "mimetype is approx!");
+						sce->is_approx = 1;
+						break;
+					} else {
+						log_error_write(srv, __FILE__, __LINE__, "s", "mimetype is not approx!");
+					}
 				}
 			}
 		}
