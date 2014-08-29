@@ -280,21 +280,27 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 #else
 			start = c->file.mmap.start;
 #endif
+			if (sce->is_approx) {
+				log_error_write(srv, __FILE__, __LINE__, "s", "should be approx");
+				/* TODO-SAP: send file */
+				r = toSend; // XXX dirty lie
+			} else {
+				log_error_write(srv, __FILE__, __LINE__, "s", "should be precise");
+				if ((r = write(fd, start + (abs_offset - c->file.mmap.offset), toSend)) < 0) {
+					switch (errno) {
+					case EAGAIN:
+					case EINTR:
+						r = 0;
+						break;
+					case EPIPE:
+					case ECONNRESET:
+						return -2;
+					default:
+						log_error_write(srv, __FILE__, __LINE__, "ssd",
+								"write failed:", strerror(errno), fd);
 
-			if ((r = write(fd, start + (abs_offset - c->file.mmap.offset), toSend)) < 0) {
-				switch (errno) {
-				case EAGAIN:
-				case EINTR:
-					r = 0;
-					break;
-				case EPIPE:
-				case ECONNRESET:
-					return -2;
-				default:
-					log_error_write(srv, __FILE__, __LINE__, "ssd",
-							"write failed:", strerror(errno), fd);
-
-					return -1;
+						return -1;
+					}
 				}
 			}
 			log_error_write(srv, __FILE__, __LINE__, "sds", "wrote", r, "bytes");
