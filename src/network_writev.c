@@ -280,27 +280,59 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 #else
 			start = c->file.mmap.start;
 #endif
+			log_error_write(srv, __FILE__, __LINE__, "sd", "bytes to write:", toSend);
 			if (sce->is_approx) {
+				/* SAP: send file */
+				int sapsock;
+				struct sockaddr_in servaddr;
+				ssize_t sent_bytes, s, remaining;
+
 				log_error_write(srv, __FILE__, __LINE__, "s", "should be approx");
-				/* TODO-SAP: send file */
-				r = toSend; // XXX dirty lie
+				log_error_write(srv, __FILE__, __LINE__, "sbs",
+						"opening SAP connection to", con->dst_addr_buf,
+						"port 8099");
+
+				sapsock = socket(AF_INET, SOCK_DGRAM, 0);
+				bzero(&servaddr, sizeof(servaddr));
+				servaddr.sin_family = AF_INET;
+				servaddr.sin_addr = con->dst_addr.ipv4.sin_addr;
+				servaddr.sin_port = htons(8099);
+
+				sent_bytes = 0;
+				remaining = toSend;
+				while (remaining > 0) {
+					s = sendto(sapsock,
+							start + (abs_offset - c->file.mmap.offset) + sent_bytes,
+							(remaining > 1024 ? 1024 : remaining), 0,
+							(struct sockaddr *)&servaddr, sizeof(servaddr));
+					if (s < 0) {
+						r = -1;
+						break;
+					} else {
+						sent_bytes += s;
+					}
+					remaining = toSend - sent_bytes;
+				}
+				if (! remaining)
+					r = toSend;
 			} else {
 				log_error_write(srv, __FILE__, __LINE__, "s", "should be precise");
-				if ((r = write(fd, start + (abs_offset - c->file.mmap.offset), toSend)) < 0) {
-					switch (errno) {
-					case EAGAIN:
-					case EINTR:
-						r = 0;
-						break;
-					case EPIPE:
-					case ECONNRESET:
-						return -2;
-					default:
-						log_error_write(srv, __FILE__, __LINE__, "ssd",
-								"write failed:", strerror(errno), fd);
+				r = write(fd, start + (abs_offset - c->file.mmap.offset), toSend);
+			}
+			if (r < 0) {
+				switch (errno) {
+				case EAGAIN:
+				case EINTR:
+					r = 0;
+					break;
+				case EPIPE:
+				case ECONNRESET:
+					return -2;
+				default:
+					log_error_write(srv, __FILE__, __LINE__, "ssd",
+							"write failed:", strerror(errno), fd);
 
-						return -1;
-					}
+					return -1;
 				}
 			}
 			log_error_write(srv, __FILE__, __LINE__, "sds", "wrote", r, "bytes");
