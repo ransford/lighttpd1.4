@@ -1,0 +1,3 @@
+[submodule "libsap"]
+	path = libsap
+	url = ssh://git@bitbucket.org/ransford/libsap.git
