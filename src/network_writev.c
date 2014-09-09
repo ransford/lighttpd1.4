@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include "sap.h"
+
 #if 0
 #define LOCAL_BUFFERING 1
 #endif
@@ -283,29 +285,33 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 			log_error_write(srv, __FILE__, __LINE__, "sd", "bytes to write:", toSend);
 			if (sce->is_approx) {
 				/* SAP: send file */
-				int sapsock;
-				struct sockaddr_in servaddr;
+				sap_sock_t *sapsock;
+				char addrstr[256];
 				ssize_t sent_bytes, s, remaining;
 
 				log_error_write(srv, __FILE__, __LINE__, "s", "should be approx");
 				log_error_write(srv, __FILE__, __LINE__, "sbs",
 						"opening SAP connection to", con->dst_addr_buf,
-						"port 8099");
+						"port 8099/udp");
 
-				sapsock = socket(AF_INET, SOCK_DGRAM, 0);
-				bzero(&servaddr, sizeof(servaddr));
-				servaddr.sin_family = AF_INET;
-				servaddr.sin_addr = con->dst_addr.ipv4.sin_addr;
-				servaddr.sin_port = htons(8099);
+				sapsock = sap_socket();
+				sap_set_mode(sapsock, SAP_APPROX, 4 /* XXX */);
+				inet_ntop(AF_INET, &con->dst_addr.ipv4.sin_addr,
+						addrstr, sizeof addrstr);
+				force_assert(addrstr != NULL);
+				sap_connect(sapsock, addrstr, 8099);
+				log_error_write(srv, __FILE__, __LINE__, "ss",
+						"\"connected\" to", addrstr);
 
 				sent_bytes = 0;
 				remaining = toSend;
 				while (remaining > 0) {
-					s = sendto(sapsock,
+					s = sap_send(sapsock,
 							start + (abs_offset - c->file.mmap.offset) + sent_bytes,
-							(remaining > 1024 ? 1024 : remaining), 0,
-							(struct sockaddr *)&servaddr, sizeof(servaddr));
+							(remaining > 1024 ? 1024 : remaining));
 					if (s < 0) {
+						log_error_write(srv, __FILE__, __LINE__, "s",
+								"error in sap_send()");
 						r = -1;
 						break;
 					} else {
@@ -313,6 +319,8 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 					}
 					remaining = toSend - sent_bytes;
 				}
+				sap_close(sapsock);
+
 				if (! remaining)
 					r = toSend;
 			} else {
