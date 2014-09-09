@@ -459,6 +459,7 @@ ADD_EXECUTABLE(lighttpd
 	${COMMON_SRC}
 )
 SET(L_INSTALL_TARGETS ${L_INSTALL_TARGETS} lighttpd)
+target_link_libraries(lighttpd ${SAP_LIBRARY})
 
 ADD_AND_INSTALL_LIBRARY(mod_access mod_access.c)
 ADD_AND_INSTALL_LIBRARY(mod_accesslog mod_accesslog.c)
