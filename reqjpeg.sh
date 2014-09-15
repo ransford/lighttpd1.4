@@ -2,9 +2,9 @@
 
 HOST=${1:-localhost}
 
-test -f ./libsap/examples/stream/recvfile || make -C libsap || exit 1
+test -f ./libsap/examples/recvfile/recvfile || make -C libsap || exit 1
 
-./libsap/examples/stream/recvfile htdocs/foo.jpg foo-tmp.jpg &
+./libsap/examples/recvfile/recvfile htdocs/fox.jpg fox-tmp.jpg &
 
 curl -v -O -H 'X-SAP-Approx: image/jpeg, image/tiff' \
 	"http://${HOST}:8099/fox.jpg"
