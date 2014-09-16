@@ -27,6 +27,8 @@
 #include <assert.h>
 
 #include "sap.h"
+#include "debug.h"
+#define SAP_BUFSIZE 1024
 
 #if 0
 #define LOCAL_BUFFERING 1
@@ -46,6 +48,7 @@
 
 int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkqueue *cq, off_t max_bytes) {
 	chunk *c;
+
 	log_error_write(srv, __FILE__, __LINE__, "s", "network_write_chunkqueue_writev");
 
 	for(c = cq->first; (max_bytes > 0) && (NULL != c); c = c->next) {
@@ -284,31 +287,52 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 #endif
 			log_error_write(srv, __FILE__, __LINE__, "sd", "bytes to write:", toSend);
 			if (sce->is_approx) {
-				/* SAP: send file */
-				sap_sock_t *sapsock;
+				ssize_t sent_bytes = 0, s, remaining = toSend;
+				uint32_t maxseqno;
+
+				/* SAP: set up socket*/
 				char addrstr[256];
-				ssize_t sent_bytes, s, remaining;
+				sap_sock_t *sapsock = sap_socket();
+				dbg_set_flags(DBG_SAP, DBG_SET);
 
-				log_error_write(srv, __FILE__, __LINE__, "s", "should be approx");
-				log_error_write(srv, __FILE__, __LINE__, "sbs",
-						"opening SAP connection to", con->dst_addr_buf,
-						"port 8099/udp");
-
-				sapsock = sap_socket();
-				sap_set_mode(sapsock, SAP_APPROX, 4 /* XXX */);
 				inet_ntop(AF_INET, &con->dst_addr.ipv4.sin_addr,
 						addrstr, sizeof addrstr);
 				force_assert(addrstr != NULL);
+				log_error_write(srv, __FILE__, __LINE__, "sbs",
+						"opening SAP connection to", con->dst_addr_buf,
+						"port 8099/udp");
 				sap_connect(sapsock, addrstr, 8099);
 				log_error_write(srv, __FILE__, __LINE__, "ss",
 						"\"connected\" to", addrstr);
 
-				sent_bytes = 0;
-				remaining = toSend;
+				log_error_write(srv, __FILE__, __LINE__, "s", "should be approx");
+
+				/* announce max sequence number receiver should expect */
+				sap_set_mode(sapsock, SAP_PRECISE, 0);
+				maxseqno = (uint32_t)remaining / SAP_BUFSIZE;
+				if ((uint32_t)remaining % SAP_BUFSIZE)
+					maxseqno++;
+				sapsock->last_seq = (uint64_t)maxseqno;
+				log_error_write(srv, __FILE__, __LINE__, "sdsd", "maxseqno =",
+						maxseqno, "/", htonl(maxseqno));
+				maxseqno = htonl(maxseqno);
+
+				/* send sequence number */
+				log_error_write(srv, __FILE__, __LINE__, "sds", "Sending",
+						sizeof(maxseqno), "bytes");
+				s = sap_send(sapsock, (char *)&maxseqno, sizeof(maxseqno));
+				if (s != sizeof(maxseqno)) {
+					log_error_write(srv, __FILE__, __LINE__, "sd",
+							"error sending maxseqno() =", s);
+					remaining = r = -1;
+				}
+
+				sap_set_mode(sapsock, SAP_APPROX, 0); /* 0->no protected bytes*/
+				dbg_set_flags(DBG_SAP, DBG_XOR);
 				while (remaining > 0) {
 					s = sap_send(sapsock,
 							start + (abs_offset - c->file.mmap.offset) + sent_bytes,
-							(remaining > 1024 ? 1024 : remaining));
+							(remaining > SAP_BUFSIZE ? SAP_BUFSIZE : remaining));
 					if (s < 0) {
 						log_error_write(srv, __FILE__, __LINE__, "s",
 								"error in sap_send()");
@@ -319,10 +343,12 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 					}
 					remaining = toSend - sent_bytes;
 				}
-				sap_close(sapsock);
 
 				if (! remaining)
 					r = toSend;
+
+				dbg_set_flags(DBG_SAP, DBG_XOR);
+				sap_close(sapsock);
 			} else {
 				log_error_write(srv, __FILE__, __LINE__, "s", "should be precise");
 				r = write(fd, start + (abs_offset - c->file.mmap.offset), toSend);
