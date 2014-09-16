@@ -309,12 +309,11 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 
 				/* announce max sequence number receiver should expect */
 				sap_set_mode(sapsock, SAP_PRECISE, 0);
-				maxseqno = (uint32_t)remaining / SAP_BUFSIZE;
+				maxseqno = ((uint32_t)remaining / SAP_BUFSIZE) - 1;
 				if ((uint32_t)remaining % SAP_BUFSIZE)
 					maxseqno++;
-				sapsock->last_seq = (uint64_t)maxseqno;
-				log_error_write(srv, __FILE__, __LINE__, "sdsd", "maxseqno =",
-						maxseqno, "/", htonl(maxseqno));
+				log_error_write(srv, __FILE__, __LINE__, "sd", "maxseqno",
+						maxseqno);
 				maxseqno = htonl(maxseqno);
 
 				/* send sequence number */
