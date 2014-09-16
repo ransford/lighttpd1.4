@@ -315,10 +315,6 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 				log_error_write(srv, __FILE__, __LINE__, "sd", "maxseqno",
 						maxseqno);
 				maxseqno = htonl(maxseqno);
-
-				/* send sequence number */
-				log_error_write(srv, __FILE__, __LINE__, "sds", "Sending",
-						sizeof(maxseqno), "bytes");
 				s = sap_send(sapsock, (char *)&maxseqno, sizeof(maxseqno));
 				if (s != sizeof(maxseqno)) {
 					log_error_write(srv, __FILE__, __LINE__, "sd",
@@ -347,6 +343,7 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 					r = toSend;
 
 				dbg_set_flags(DBG_SAP, DBG_XOR);
+				sap_send_fin(sapsock);
 				sap_close(sapsock);
 			} else {
 				log_error_write(srv, __FILE__, __LINE__, "s", "should be precise");
