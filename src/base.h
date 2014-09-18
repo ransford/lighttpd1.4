@@ -329,6 +329,7 @@ typedef struct {
 #endif
 
 	unsigned short sap_enabled;
+	unsigned short sap_force_precise;
 } specific_config;
 
 /* the order of the items should be the same as they are processed

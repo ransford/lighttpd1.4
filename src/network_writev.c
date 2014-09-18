@@ -322,7 +322,11 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 					remaining = r = -1;
 				}
 
-				sap_set_mode(sapsock, SAP_APPROX, 0); /* 0->no protected bytes*/
+				if (con->conf.sap_force_precise) {
+					log_error_write(srv, __FILE__, __LINE__, "s", "forcing precise");
+				} else {
+					sap_set_mode(sapsock, SAP_APPROX, 0); /* 0->no protected bytes*/
+				}
 				dbg_set_flags(DBG_SAP, DBG_XOR);
 				while (remaining > 0) {
 					s = sap_send(sapsock,
