@@ -30,7 +30,7 @@
 
 /* both should be way smaller than SSIZE_MAX :) */
 #define MAX_READ_LIMIT (256*1024)
-#define MAX_WRITE_LIMIT (256*1024)
+#define MAX_WRITE_LIMIT (16384*1024) // SAP: 16 MB limit makes setup/teardown easier for sub-16MB files
 
 /**
  * max size of the HTTP request header

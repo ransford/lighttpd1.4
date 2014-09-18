@@ -48,24 +48,7 @@
 
 int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkqueue *cq, off_t max_bytes) {
 	chunk *c;
-
-	/* SAP: set up socket*/
-	char addrstr[256];
-	sap_sock_t *sapsock = sap_socket();
-
 	log_error_write(srv, __FILE__, __LINE__, "s", "network_write_chunkqueue_writev");
-
-	dbg_set_flags(DBG_SAP, DBG_SET);
-
-	inet_ntop(AF_INET, &con->dst_addr.ipv4.sin_addr,
-			addrstr, sizeof addrstr);
-	force_assert(addrstr != NULL);
-	log_error_write(srv, __FILE__, __LINE__, "sbs",
-			"opening SAP connection to", con->dst_addr_buf,
-			"port 8099/udp");
-	sap_connect(sapsock, addrstr, 8099);
-	log_error_write(srv, __FILE__, __LINE__, "ss",
-			"\"connected\" to", addrstr);
 
 	for(c = cq->first; (max_bytes > 0) && (NULL != c); c = c->next) {
 		int chunk_finished = 0;
@@ -309,12 +292,13 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 
 				if (con->conf.sap_force_precise) {
 					log_error_write(srv, __FILE__, __LINE__, "s", "forcing precise");
+					sap_set_mode(con->sap_sock, SAP_PRECISE, 0); /* 0->no protected bytes*/
 				} else {
-					sap_set_mode(sapsock, SAP_APPROX, 0); /* 0->no protected bytes*/
+					sap_set_mode(con->sap_sock, SAP_APPROX, 0); /* 0->no protected bytes*/
 				}
-				dbg_set_flags(DBG_SAP, DBG_XOR);
+				//dbg_set_flags(DBG_SAP, DBG_XOR);
 				while (remaining > 0) {
-					s = sap_send(sapsock,
+					s = sap_send(con->sap_sock,
 							start + (abs_offset - c->file.mmap.offset) + sent_bytes,
 							(remaining > SAP_BUFSIZE ? SAP_BUFSIZE : remaining));
 					if (s < 0) {
@@ -331,7 +315,7 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 				if (! remaining)
 					r = toSend;
 
-				dbg_set_flags(DBG_SAP, DBG_XOR);
+				//dbg_set_flags(DBG_SAP, DBG_XOR);
 			} else {
 				log_error_write(srv, __FILE__, __LINE__, "s", "should be precise");
 				r = write(fd, start + (abs_offset - c->file.mmap.offset), toSend);
@@ -383,9 +367,6 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 			break;
 		}
 	}
-
-	sap_send_fin(sapsock);
-	sap_close(sapsock);
 
 	return 0;
 }

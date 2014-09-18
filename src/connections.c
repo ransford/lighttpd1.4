@@ -36,6 +36,9 @@
 
 #include "sys-socket.h"
 
+#include "sap.h"
+#include "debug.h"
+
 typedef struct {
 	        PLUGIN_DATA;
 } plugin_data;
@@ -124,6 +127,12 @@ int connection_close(server *srv, connection *con) {
 		con->ssl = NULL;
 	}
 #endif
+
+	if (con->sap_sock) {
+		if (con->sap_sock->state == SAP_CONNECTED)
+			sap_send_fin(con->sap_sock);
+		sap_close(con->sap_sock);
+	}
 
 	fdevent_event_del(srv->ev, &(con->fde_ndx), con->fd);
 	fdevent_unregister(srv->ev, con->fd);
@@ -412,7 +421,23 @@ static int connection_handle_read(server *srv, connection *con) {
 	return 0;
 }
 
+static void connection_init_sap_socket(server *srv, connection *con) {
+	char addrstr[256];
+	con->sap_sock = sap_socket();
+	dbg_set_flags(DBG_SAP, DBG_SET);
+	inet_ntop(AF_INET, &con->dst_addr.ipv4.sin_addr,
+			addrstr, sizeof addrstr);
+	force_assert(addrstr != NULL);
+	log_error_write(srv, __FILE__, __LINE__, "sbs",
+			"opening SAP connection to", con->dst_addr_buf,
+			"port 8099/udp");
+	sap_connect(con->sap_sock, addrstr, 8099);
+	log_error_write(srv, __FILE__, __LINE__, "ss",
+			"\"connected\" to", addrstr);
+}
+
 static int connection_handle_write_prepare(server *srv, connection *con) {
+	connection_init_sap_socket(srv, con);
 	if (con->mode == DIRECT) {
 		/* static files */
 		switch(con->request.http_method) {
@@ -694,6 +719,7 @@ connection *connection_init(server *srv) {
 	con->environment     = array_init();
 
 	con->sap_approx_types = array_init();
+	con->sap_sock = NULL;
 
 	/* init plugin specific connection structures */
 
@@ -721,6 +747,7 @@ void connections_free(server *srv) {
 		array_free(con->response.headers);
 		array_free(con->environment);
 		array_free(con->sap_approx_types);
+		free(con->sap_sock);
 
 #define CLEAN(x) \
 	buffer_free(con->x);

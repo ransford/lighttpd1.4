@@ -38,6 +38,8 @@
 # endif
 #endif
 
+#include "sap.h"
+
 #ifdef HAVE_FAM_H
 # include <fam.h>
 #endif
@@ -456,6 +458,7 @@ typedef struct {
 
 	short int sap_enabled;
 	array *sap_approx_types;
+	sap_sock_t *sap_sock;
 } connection;
 
 typedef struct {
