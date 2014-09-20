@@ -13,3 +13,6 @@ depcomp
 install-sh
 ltmain.sh
 missing
+/access.log
+/error.log
+/runs-*.csv
