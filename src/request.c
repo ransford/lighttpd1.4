@@ -1021,6 +1021,15 @@ int http_request_parse(server *srv, connection *con) {
 								log_error_write(srv, __FILE__, __LINE__, "sd", "now used:", con->sap_approx_types->used);
 
 								return 0;
+							} else if (con->conf.sap_enabled && cmp > 0 &&
+									0 == (cmp = buffer_caseless_compare(CONST_BUF_LEN(ds->key),
+											CONST_STR_LEN("X-SAP-Force-Precise")))) {
+								/* XXX doesn't matter what value the client
+								 * provides here; i.e. "X-SAP-Force-Precise:
+								 * True" and "X-SAP-Force-Precise: False" have
+								 * the same effect of forcing precise semantics.
+								 */
+								con->sap_force_precise = 1;
 							}
 
 							if (ds) array_insert_unique(con->request.headers, (data_unset *)ds);

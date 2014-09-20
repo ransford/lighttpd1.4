@@ -119,7 +119,6 @@ static int config_insert(server *srv) {
 		{ "server.use-keep-alive",       "use server.max-keep-alive-requests = 0 instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
 		{ "server.force-lower-case-files",       "use server.force-lowercase-filenames instead", T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
 		{ "sap.enabled",                 NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 77 */
-		{ "sap.force-precise",           NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER },     /* 78 */
 
 		{ NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
 	};
@@ -209,7 +208,6 @@ static int config_insert(server *srv) {
 		s->ssl_disable_client_renegotiation = 1;
 
 		s->sap_enabled = 1;
-		s->sap_force_precise = 0;
 
 		cv[2].destination = s->errorfile_prefix;
 
@@ -272,7 +270,6 @@ static int config_insert(server *srv) {
 		cv[65].destination = &(s->ssl_disable_client_renegotiation);
 
 		cv[77].destination = &(s->sap_enabled);
-		cv[78].destination = &(s->sap_force_precise);
 
 		srv->config_storage[i] = s;
 
@@ -373,7 +370,6 @@ int config_setup_connection(server *srv, connection *con) {
 	PATCH(ssl_disable_client_renegotiation);
 
 	PATCH(sap_enabled);
-	PATCH(sap_force_precise);
 
 	return 0;
 }

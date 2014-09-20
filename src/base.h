@@ -331,7 +331,6 @@ typedef struct {
 #endif
 
 	unsigned short sap_enabled;
-	unsigned short sap_force_precise;
 } specific_config;
 
 /* the order of the items should be the same as they are processed
@@ -456,7 +455,8 @@ typedef struct {
 
 	int conditional_is_valid[COMP_LAST_ELEMENT]; 
 
-	short int sap_enabled;
+	unsigned short int sap_enabled;
+	unsigned short sap_force_precise;
 	array *sap_approx_types;
 	sap_sock_t *sap_sock;
 } connection;

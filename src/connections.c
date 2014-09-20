@@ -872,6 +872,7 @@ int connection_reset(server *srv, connection *con) {
 
 	/* SAP: reset */
 	con->sap_enabled = 0;
+	con->sap_force_precise = 0;
 	array_reset(con->sap_approx_types);
 
 	chunkqueue_reset(con->write_queue);

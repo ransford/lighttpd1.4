@@ -290,7 +290,7 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 
 				log_error_write(srv, __FILE__, __LINE__, "s", "should be approx");
 
-				if (con->conf.sap_force_precise) {
+				if (con->sap_force_precise) {
 					log_error_write(srv, __FILE__, __LINE__, "s", "forcing precise");
 					sap_set_mode(con->sap_sock, SAP_PRECISE, 0); /* 0->no protected bytes*/
 				} else {
