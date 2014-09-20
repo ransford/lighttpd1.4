@@ -1029,7 +1029,9 @@ int http_request_parse(server *srv, connection *con) {
 								 * True" and "X-SAP-Force-Precise: False" have
 								 * the same effect of forcing precise semantics.
 								 */
+								log_error_write(srv, __FILE__, __LINE__, "s", "Force-Precise!");
 								con->sap_force_precise = 1;
+								return 0;
 							}
 
 							if (ds) array_insert_unique(con->request.headers, (data_unset *)ds);
