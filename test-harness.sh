@@ -105,8 +105,6 @@ done
 tail -n $NRUNS "$CSVFILE"
 grep "^${BITRATE}," "$CSVFILE" >> all.csv
 
-# XXX collect precise-sap data
-if [ "x" = "y" ]; then
 sudo /mnt/sap/util/rxmode-normal.sh
 ssh "$HOST" sudo /mnt/sap/util/rxmode-normal.sh
 CSVFILE="runs-approx-sap-${JPEG}.csv"
@@ -121,7 +119,6 @@ for x in `seq 1 ${NRUNS}`; do
 done
 tail -n $NRUNS "$CSVFILE"
 grep "^${BITRATE}," "$CSVFILE" >> all.csv
-fi
 
 # collect approx-sap data
 sudo /mnt/sap/util/rxmode-badfcs.sh
