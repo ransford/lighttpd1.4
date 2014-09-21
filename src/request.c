@@ -790,6 +790,9 @@ int http_request_parse(server *srv, connection *con) {
 							buffer_copy_string_len(ds->key, key, key_len);
 							buffer_copy_string_len(ds->value, value, s_len);
 
+							log_error_write(srv, __FILE__, __LINE__, "sb",
+									"Processing header:", ds->key);
+
 							/* retreive values
 							 *
 							 *
@@ -1019,8 +1022,6 @@ int http_request_parse(server *srv, connection *con) {
 									log_error_write(srv, __FILE__, __LINE__, "sd", "now used:", con->sap_approx_types->used);
 								}
 								log_error_write(srv, __FILE__, __LINE__, "sd", "now used:", con->sap_approx_types->used);
-
-								return 0;
 							} else if (con->conf.sap_enabled && cmp > 0 &&
 									0 == (cmp = buffer_caseless_compare(CONST_BUF_LEN(ds->key),
 											CONST_STR_LEN("X-SAP-Force-Precise")))) {
@@ -1031,7 +1032,6 @@ int http_request_parse(server *srv, connection *con) {
 								 */
 								log_error_write(srv, __FILE__, __LINE__, "s", "Force-Precise!");
 								con->sap_force_precise = 1;
-								return 0;
 							}
 
 							if (ds) array_insert_unique(con->request.headers, (data_unset *)ds);
