@@ -434,6 +434,12 @@ static void connection_init_sap_socket(server *srv, connection *con) {
 	sap_connect(con->sap_sock, addrstr, 8099);
 	log_error_write(srv, __FILE__, __LINE__, "ss",
 			"\"connected\" to", addrstr);
+	if (sap_ping(con->sap_sock) < 0) {
+		log_error_write(srv, __FILE__, __LINE__, "sss",
+				"Failed to sap_ping()", addrstr, "-- reverting to TCP xfer");
+		sap_close(con->sap_sock);
+		con->sap_enabled = 0;
+	}
 }
 
 static int connection_handle_write_prepare(server *srv, connection *con) {
