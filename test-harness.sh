@@ -1,6 +1,7 @@
 #!/bin/sh
 
 HOST=${1:-localhost}; shift
+HOSTPRECISE=${1:-localhost}; shift
 JPEG=${1:-fox}; shift
 REALURL="http://${HOST}:8099/${JPEG}.jpg"
 
@@ -85,13 +86,13 @@ done
 
 # prep: rxmode, bitrate
 sudo /mnt/sap/util/setrate.sh "${BITRATE}M"
-ssh "$HOST" sudo /mnt/sap/util/setrate.sh "${BITRATE}M"
+ssh "$HOSTPRECISE" sudo /mnt/sap/util/setrate.sh "${BITRATE}M"
 
 echo "bitrate,is_approx,nbytes,xfer_time_s,sha1sum_good,sha1sum_current" > all.csv
 
 # collect precise data
 sudo /mnt/sap/util/rxmode-normal.sh
-ssh "$HOST" sudo /mnt/sap/util/rxmode-normal.sh
+ssh "$HOSTPRECISE" sudo /mnt/sap/util/rxmode-normal.sh
 CSVFILE="runs-precise-tcp-${JPEG}.csv"
 if [ ! -f "$CSVFILE" ]; then
 	echo "bitrate,is_approx,nbytes,xfer_time_s,sha1sum_good,sha1sum_current" > "$CSVFILE"
@@ -106,8 +107,8 @@ tail -n $NRUNS "$CSVFILE"
 grep "^${BITRATE}," "$CSVFILE" >> all.csv
 
 sudo /mnt/sap/util/rxmode-normal.sh
-ssh "$HOST" sudo /mnt/sap/util/rxmode-normal.sh
-CSVFILE="runs-approx-sap-${JPEG}.csv"
+ssh "$HOSTPRECISE" sudo /mnt/sap/util/rxmode-normal.sh
+CSVFILE="runs-precise-sap-${JPEG}.csv"
 if [ ! -f "$CSVFILE" ]; then
 	echo "bitrate,is_approx,nbytes,xfer_time_s,sha1sum_good,sha1sum_current" > "$CSVFILE"
 fi
@@ -122,7 +123,7 @@ grep "^${BITRATE}," "$CSVFILE" >> all.csv
 
 # collect approx-sap data
 sudo /mnt/sap/util/rxmode-badfcs.sh
-ssh "$HOST" sudo /mnt/sap/util/rxmode-badfcs.sh
+ssh "$HOSTPRECISE" sudo /mnt/sap/util/rxmode-badfcs.sh
 CSVFILE="runs-approx-sap-${JPEG}.csv"
 if [ ! -f "$CSVFILE" ]; then
 	echo "bitrate,is_approx,nbytes,xfer_time_s,sha1sum_good,sha1sum_current" > "$CSVFILE"
