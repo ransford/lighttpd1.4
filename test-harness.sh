@@ -11,6 +11,7 @@ HOSTPRECISE=${1:-localhost}; shift
 JPEG=${1:-fox}; shift
 PORT=8099
 REALURL="http://${HOST}:${PORT}/${JPEG}.jpg"
+PRECISEURL="http://${HOSTPRECISE}:${PORT}/${JPEG}.jpg"
 OUTCSV=${1:-out.csv}; shift
 
 # uses SHA-1
@@ -88,8 +89,8 @@ do_run_approx_sap () {
 
 # warm the cache
 for x in $(seq 1 ${WARMUPTRIALS}); do
-	echo -n "warming cache with ${REALURL}, trial $x... "
-	do_run_precise_tcp >/dev/null && echo "done."
+	echo -n "warming cache, trial $x... "
+	curl --fail --silent -o /dev/null "$PRECISEURL" && echo "done."
 done
 
 ##### ==================================================================== #####
