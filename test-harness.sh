@@ -1,9 +1,17 @@
 #!/bin/sh
 
+if [ $# -ne 4 ]; then
+	echo "Usage: $0 host host-precise jpegpfx out.csv"                >&2
+	echo "e.g.: test-harness.sh tabinet-wifi tabinet foo all-foo.csv" >&2
+	exit 127
+fi
+
 HOST=${1:-localhost}; shift
 HOSTPRECISE=${1:-localhost}; shift
 JPEG=${1:-fox}; shift
-REALURL="http://${HOST}:8099/${JPEG}.jpg"
+PORT=8099
+REALURL="http://${HOST}:${PORT}/${JPEG}.jpg"
+OUTCSV=${1:-out.csv}; shift
 
 # uses SHA-1
 shafile () {
@@ -36,7 +44,7 @@ do_run_precise_tcp () {
 	TIMINGP=$(perl -e "$TIMINGS")
 	SHA1NOW=$(shafile "$JPGF")
 	SIZENOW=$(filesize "$JPGF")
-	CSVLINE="${BITRATE},F,${SIZENOW},${TIMINGP},${SHA1GOOD},${SHA1NOW}"
+	CSVLINE="${BITRATE},tcp,F,${SIZENOW},${TIMINGP},${SHA1GOOD},${SHA1NOW}"
 	echo "$CSVLINE"
 	test "$SHA1GOOD" = "$SHA1NOW"
 	return $?
@@ -54,8 +62,9 @@ do_run_precise_sap () {
 	TIME_S=$(perl -e "print $TIME_US / 1e6")
 	SHA1NOW=$(shafile "$JPGF")
 	SIZENOW=$(filesize "$JPGF")
-	CSVLINE="${BITRATE},F,${SIZENOW},${TIME_S},${SHA1GOOD},${SHA1NOW}"
+	CSVLINE="${BITRATE},sap,F,${SIZENOW},${TIME_S},${SHA1GOOD},${SHA1NOW}"
 	echo "$CSVLINE"
+	test "$SHA1GOOD" = "$SHA1NOW"
 	return 0
 }
 
@@ -67,18 +76,19 @@ do_run_approx_sap () {
 	curl -s -o "${JPGF}.deleteme" -H 'X-SAP-Approx: image/jpeg' "$REALURL"
 	wait # best command ever
 	TIME_US=$(tail -1 "${JPGF}.log" | grep -o '[0-9]\+')
+	echo "got TIME_US=${TIME_US}" >&2
 	if [ -z "$TIME_US" ]; then return 1; fi
 	TIME_S=$(perl -e "print $TIME_US / 1e6")
 	SHA1NOW=$(shafile "$JPGF")
 	SIZENOW=$(filesize "$JPGF")
-	CSVLINE="${BITRATE},T,${SIZENOW},${TIME_S},${SHA1GOOD},${SHA1NOW}"
+	CSVLINE="${BITRATE},sap,T,${SIZENOW},${TIME_S},${SHA1GOOD},${SHA1NOW}"
 	echo "$CSVLINE"
 	return 0
 }
 
 # warm the cache
 for x in $(seq 1 ${WARMUPTRIALS}); do
-	echo -n "letting server warm cache, trial $x... "
+	echo -n "warming cache with ${REALURL}, trial $x... "
 	do_run_precise_tcp >/dev/null && echo "done."
 done
 
@@ -88,51 +98,33 @@ done
 sudo /mnt/sap/util/setrate.sh "${BITRATE}M"
 ssh "$HOSTPRECISE" sudo /mnt/sap/util/setrate.sh "${BITRATE}M"
 
-echo "bitrate,is_approx,nbytes,xfer_time_s,sha1sum_good,sha1sum_current" > all.csv
+echo "bitrate,protocol,is_approx,nbytes,xfer_time_s,sha1sum_good,sha1sum_current" > "$OUTCSV"
 
 # collect precise data
 sudo /mnt/sap/util/rxmode-normal.sh
 ssh "$HOSTPRECISE" sudo /mnt/sap/util/rxmode-normal.sh
-CSVFILE="runs-precise-tcp-${JPEG}.csv"
-if [ ! -f "$CSVFILE" ]; then
-	echo "bitrate,is_approx,nbytes,xfer_time_s,sha1sum_good,sha1sum_current" > "$CSVFILE"
-fi
 for x in `seq 1 ${NRUNS}`; do
 	echo -n "doing precise TCP run, trial $x... "
-	do_run_precise_tcp >> "$CSVFILE"
+	do_run_precise_tcp >> "$OUTCSV"
 	if [ $? -eq 0 ]; then echo "done."; else echo "ERROR!"; fi
 	sleep 1
 done
-tail -n $NRUNS "$CSVFILE"
-grep "^${BITRATE}," "$CSVFILE" >> all.csv
 
 sudo /mnt/sap/util/rxmode-normal.sh
 ssh "$HOSTPRECISE" sudo /mnt/sap/util/rxmode-normal.sh
-CSVFILE="runs-precise-sap-${JPEG}.csv"
-if [ ! -f "$CSVFILE" ]; then
-	echo "bitrate,is_approx,nbytes,xfer_time_s,sha1sum_good,sha1sum_current" > "$CSVFILE"
-fi
 for x in `seq 1 ${NRUNS}`; do
 	echo -n "doing precise SAP run, trial $x... "
-	do_run_precise_sap >> "$CSVFILE"
+	do_run_precise_sap >> "$OUTCSV"
 	if [ $? -eq 0 ]; then echo "done."; else echo "ERROR!"; fi
 	sleep 1
 done
-tail -n $NRUNS "$CSVFILE"
-grep "^${BITRATE}," "$CSVFILE" >> all.csv
 
 # collect approx-sap data
 sudo /mnt/sap/util/rxmode-badfcs.sh
 ssh "$HOSTPRECISE" sudo /mnt/sap/util/rxmode-badfcs.sh
-CSVFILE="runs-approx-sap-${JPEG}.csv"
-if [ ! -f "$CSVFILE" ]; then
-	echo "bitrate,is_approx,nbytes,xfer_time_s,sha1sum_good,sha1sum_current" > "$CSVFILE"
-fi
 for x in `seq 1 ${NRUNS}`; do
 	echo -n "doing approx SAP run, trial $x... "
-	do_run_approx_sap >> "$CSVFILE"
+	do_run_approx_sap >> "$OUTCSV"
 	if [ $? -eq 0 ]; then echo "done."; else echo "ERROR!"; fi
 	sleep 1
 done
-tail -n $NRUNS "$CSVFILE"
-grep "^${BITRATE}," "$CSVFILE" >> all.csv
