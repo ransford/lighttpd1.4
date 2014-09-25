@@ -1,8 +1,8 @@
 #!/bin/sh
 
-if [ $# -ne 4 ]; then
-	echo "Usage: $0 host host-precise jpegpfx out.csv"                >&2
-	echo "e.g.: test-harness.sh tabinet-wifi tabinet foo all-foo.csv" >&2
+if [ $# -ne 5 ]; then
+	echo "Usage: $0 host host-precise jpegpfx nruns out.csv"             >&2
+	echo "e.g.: test-harness.sh tabinet-wifi tabinet foo 10 all-foo.csv" >&2
 	exit 127
 fi
 
@@ -12,6 +12,7 @@ JPEG=${1:-fox}; shift
 PORT=8099
 REALURL="http://${HOST}:${PORT}/${JPEG}.jpg"
 PRECISEURL="http://${HOSTPRECISE}:${PORT}/${JPEG}.jpg"
+NRUNS=${1:-10}; shift
 OUTCSV=${1:-out.csv}; shift
 
 # uses SHA-1
@@ -33,7 +34,6 @@ SHA1GOOD=$(shafile htdocs/"${JPEG}".jpg)
 BITRATE=55 # Mbps
 
 WARMUPTRIALS=2
-NRUNS=10
 
 do_run_precise_tcp () {
 	JPGF="${JPEG}-precise-tcp.jpg"
