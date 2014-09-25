@@ -45,7 +45,7 @@ do_run_precise_tcp () {
 	TIMINGP=$(perl -e "$TIMINGS")
 	SHA1NOW=$(shafile "$JPGF")
 	SIZENOW=$(filesize "$JPGF")
-	CSVLINE="${BITRATE},tcp,F,${SIZENOW},${TIMINGP},${SHA1GOOD},${SHA1NOW}"
+	CSVLINE="${BITRATE},TCP,F,${SIZENOW},${TIMINGP},${SHA1GOOD},${SHA1NOW}"
 	echo "$CSVLINE"
 	test "$SHA1GOOD" = "$SHA1NOW"
 	return $?
@@ -63,7 +63,7 @@ do_run_precise_sap () {
 	TIME_S=$(perl -e "print $TIME_US / 1e6")
 	SHA1NOW=$(shafile "$JPGF")
 	SIZENOW=$(filesize "$JPGF")
-	CSVLINE="${BITRATE},sap,F,${SIZENOW},${TIME_S},${SHA1GOOD},${SHA1NOW}"
+	CSVLINE="${BITRATE},SAP (Precise),F,${SIZENOW},${TIME_S},${SHA1GOOD},${SHA1NOW}"
 	echo "$CSVLINE"
 	test "$SHA1GOOD" = "$SHA1NOW"
 	return 0
@@ -82,7 +82,7 @@ do_run_approx_sap () {
 	TIME_S=$(perl -e "print $TIME_US / 1e6")
 	SHA1NOW=$(shafile "$JPGF")
 	SIZENOW=$(filesize "$JPGF")
-	CSVLINE="${BITRATE},sap,T,${SIZENOW},${TIME_S},${SHA1GOOD},${SHA1NOW}"
+	CSVLINE="${BITRATE},SAP (Approx),T,${SIZENOW},${TIME_S},${SHA1GOOD},${SHA1NOW}"
 	echo "$CSVLINE"
 	return 0
 }
