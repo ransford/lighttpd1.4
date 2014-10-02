@@ -445,6 +445,7 @@ static void connection_init_sap_socket(server *srv, connection *con) {
 		log_error_write(srv, __FILE__, __LINE__, "sss",
 				"Failed to sap_ping()", addrstr, "-- reverting to TCP xfer");
 		sap_close(con->sap_sock);
+		con->sap_sock = NULL;
 		con->sap_enabled = 0;
 	}
 }
@@ -760,7 +761,7 @@ void connections_free(server *srv) {
 		array_free(con->response.headers);
 		array_free(con->environment);
 		array_free(con->sap_approx_types);
-		free(con->sap_sock);
+		/* free(con->sap_sock); // sap_close() takes care of this */
 
 #define CLEAN(x) \
 	buffer_free(con->x);
