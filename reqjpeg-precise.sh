@@ -4,7 +4,7 @@ HOST=${1:-localhost}
 shift
 JPEG=${1:-fox}
 
-sudo /mnt/sap/util/rxmode-badfcs.sh
+sudo /mnt/sap/util/rxmode-normal.sh
 
 test -f ./libsap/examples/recvfile/recvfile || make -C libsap || exit 1
 
@@ -13,6 +13,7 @@ test -f ./libsap/examples/recvfile/recvfile || make -C libsap || exit 1
 	2>"${JPEG}.log" &
 
 curl -v -w '@curlreport.txt' -O \
+	-H 'X-SAP-Force-Precise: True' \
 	-H 'X-SAP-Approx: image/jpeg, image/tiff' \
 	"http://${HOST}:8099/${JPEG}.jpg"
 
