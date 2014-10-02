@@ -285,7 +285,7 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 			start = c->file.mmap.start;
 #endif
 			log_error_write(srv, __FILE__, __LINE__, "sd", "bytes to write:", toSend);
-			if (sce->is_approx) {
+			if (con->sap_enabled && sce->is_approx) {
 				ssize_t sent_bytes = 0, s, remaining = toSend;
 
 				log_error_write(srv, __FILE__, __LINE__, "s", "should be approx");
