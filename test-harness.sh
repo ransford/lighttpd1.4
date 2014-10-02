@@ -52,13 +52,15 @@ do_run_precise_tcp () {
 }
 
 do_run_precise_sap () {
+	RUNNUM=$1; shift
 	JPGF="${JPEG}-precise-sap.jpg"
+	LOGFILE="${JPGF}.log.${RUNNUM}"
 	rm -f "$JPGF"
 	./libsap/examples/recvfile/recvfile \
-		"htdocs/${JPEG}.jpg" "$JPGF" 2>"${JPGF}.log" &
+		"htdocs/${JPEG}.jpg" "$JPGF" 2>"${LOGFILE}" &
 	curl -s -o "${JPGF}.deleteme" -H 'X-SAP-Approx: image/jpeg' -H 'X-SAP-Force-Precise: True' "$REALURL"
 	wait # best command ever
-	TIME_US=$(tail -1 "${JPGF}.log" | grep -o '[0-9]\+')
+	TIME_US=$(tail -1 "${LOGFILE}" | grep -o '[0-9]\+')
 	if [ -z "$TIME_US" ]; then return 1; fi
 	TIME_S=$(perl -e "print $TIME_US / 1e6")
 	SHA1NOW=$(shafile "$JPGF")
@@ -70,15 +72,17 @@ do_run_precise_sap () {
 }
 
 do_run_approx_sap () {
+	RUNNUM=$1; shift
 	JPGF="${JPEG}-approx-sap.jpg"
+	LOGFILE="${JPGF}.log.${RUNNUM}"
 	rm -f "$JPGF"
 	./libsap/examples/recvfile/recvfile \
-		"htdocs/${JPEG}.jpg" "$JPGF" 2>"${JPGF}.log" &
+		"htdocs/${JPEG}.jpg" "$JPGF" 2>"${LOGFILE}" &
 	curl -s -o "${JPGF}.deleteme" -H 'X-SAP-Approx: image/jpeg' "$REALURL"
 	wait # best command ever
-	TIME_US=$(tail -1 "${JPGF}.log" | grep -o '[0-9]\+')
+	TIME_US=$(tail -1 "${LOGFILE}" | grep -o '[0-9]\+')
 	echo "got TIME_US=${TIME_US}" >&2
-	tail -1 "${JPGF}.log" >&2
+	tail -1 "${LOGFILE}" >&2
 	if [ -z "$TIME_US" ]; then return 1; fi
 	TIME_S=$(perl -e "print $TIME_US / 1e6")
 	SHA1NOW=$(shafile "$JPGF")
@@ -107,7 +111,7 @@ sudo /mnt/sap/util/rxmode-normal.sh
 ssh "$HOSTPRECISE" sudo /mnt/sap/util/rxmode-normal.sh
 for x in `seq 1 ${NRUNS}`; do
 	echo -n "doing precise TCP run, trial $x... "
-	do_run_precise_tcp >> "$OUTCSV"
+	do_run_precise_tcp $x >> "$OUTCSV"
 	if [ $? -eq 0 ]; then echo "done."; else echo "ERROR!"; fi
 	sleep 1
 done
@@ -116,7 +120,7 @@ sudo /mnt/sap/util/rxmode-normal.sh
 ssh "$HOSTPRECISE" sudo /mnt/sap/util/rxmode-normal.sh
 for x in `seq 1 ${NRUNS}`; do
 	echo -n "doing precise SAP run, trial $x... "
-	do_run_precise_sap >> "$OUTCSV"
+	do_run_precise_sap $x >> "$OUTCSV"
 	if [ $? -eq 0 ]; then echo "done."; else echo "ERROR!"; fi
 	sleep 1
 done
@@ -126,7 +130,7 @@ sudo /mnt/sap/util/rxmode-badfcs.sh
 ssh "$HOSTPRECISE" sudo /mnt/sap/util/rxmode-badfcs.sh
 for x in `seq 1 ${NRUNS}`; do
 	echo -n "doing approx SAP run, trial $x... "
-	do_run_approx_sap >> "$OUTCSV"
+	do_run_approx_sap $x >> "$OUTCSV"
 	if [ $? -eq 0 ]; then echo "done."; else echo "ERROR!"; fi
 	sleep 1
 done
