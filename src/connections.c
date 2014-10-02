@@ -38,6 +38,7 @@
 
 #include "sap.h"
 #include "debug.h"
+#include <sys/time.h>
 
 typedef struct {
 	        PLUGIN_DATA;
@@ -423,6 +424,11 @@ static int connection_handle_read(server *srv, connection *con) {
 
 static void connection_init_sap_socket(server *srv, connection *con) {
 	char addrstr[256];
+	struct timeval timeout = {
+		.tv_sec = 3,
+		.tv_usec = 0
+	};
+
 	con->sap_sock = sap_socket();
 	dbg_set_flags(DBG_SAP, DBG_SET);
 	inet_ntop(AF_INET, &con->dst_addr.ipv4.sin_addr,
@@ -434,7 +440,8 @@ static void connection_init_sap_socket(server *srv, connection *con) {
 	sap_connect(con->sap_sock, addrstr, 8099);
 	log_error_write(srv, __FILE__, __LINE__, "ss",
 			"\"connected\" to", addrstr);
-	if (sap_ping(con->sap_sock) < 0) {
+
+	if (sap_ping(con->sap_sock, &timeout) < 0) {
 		log_error_write(srv, __FILE__, __LINE__, "sss",
 				"Failed to sap_ping()", addrstr, "-- reverting to TCP xfer");
 		sap_close(con->sap_sock);
