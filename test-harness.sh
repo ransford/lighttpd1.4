@@ -78,6 +78,7 @@ do_run_approx_sap () {
 	wait # best command ever
 	TIME_US=$(tail -1 "${JPGF}.log" | grep -o '[0-9]\+')
 	echo "got TIME_US=${TIME_US}" >&2
+	tail -1 "${JPGF}.log" >&2
 	if [ -z "$TIME_US" ]; then return 1; fi
 	TIME_S=$(perl -e "print $TIME_US / 1e6")
 	SHA1NOW=$(shafile "$JPGF")
