@@ -17,7 +17,7 @@ PORT=8099
 REALURL="http://${HOST}:${PORT}/${JPEG}.jpg"
 PRECISEURL="http://${HOSTPRECISE}:${PORT}/${JPEG}.jpg"
 
-GITREV=$(git rev-parse HEAD)
+GITREV=$(git rev-parse --short HEAD)
 MYHOST=$(hostname -s)
 OUTCSV="results/${MYHOST}-${HOSTPRECISE}-${DISTANCE}m-${NRUNS}trials-${GITREV}.csv"
 mkdir -p results
