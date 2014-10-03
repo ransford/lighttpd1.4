@@ -1,8 +1,8 @@
 #!/bin/sh
 
-if [ $# -ne 5 ]; then
-	echo "Usage: $0 host host-precise jpegpfx distance(m) nruns" >&2
-	echo " e.g.: $0 tabinet-wifi tabinet foo 8 10"     >&2
+if [ $# -ne 6 ]; then
+	echo "Usage: $0 host host-precise jpegpfx distance(m) bitrate(Mbps) nruns" >&2
+	echo " e.g.: $0 tabinet-wifi tabinet foo 8 54 10"     >&2
 	exit 127
 fi
 
@@ -10,6 +10,7 @@ HOST=${1:-localhost}; shift
 HOSTPRECISE=${1:-localhost}; shift
 JPEG=${1:-fox}; shift
 DISTANCE=$1; shift
+BITRATE=${1:-54}; shift
 NRUNS=${1:-10}; shift
 
 PORT=8099
@@ -36,8 +37,6 @@ filesize () {
 
 # SHA-1 of target file
 SHA1GOOD=$(shafile htdocs/"${JPEG}".jpg)
-
-BITRATE=55 # Mbps
 
 WARMUPTRIALS=2
 
