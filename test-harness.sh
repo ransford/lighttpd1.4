@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $# -ne 4 ]; then
+if [ $# -ne 5 ]; then
 	echo "Usage: $0 host host-precise jpegpfx distance(m) nruns" >&2
 	echo " e.g.: $0 tabinet-wifi tabinet foo 8 10"     >&2
 	exit 127
