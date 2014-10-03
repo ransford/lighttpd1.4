@@ -19,7 +19,7 @@ PRECISEURL="http://${HOSTPRECISE}:${PORT}/${JPEG}.jpg"
 
 GITREV=$(git rev-parse --short HEAD)
 MYHOST=$(hostname -s)
-OUTCSV="results/${MYHOST}-${HOSTPRECISE}-${DISTANCE}m-${NRUNS}trials-${GITREV}.csv"
+OUTCSV="results/${MYHOST}-${HOSTPRECISE}-${BITRATE}M-${DISTANCE}m-${NRUNS}trials-${GITREV}.csv"
 mkdir -p results
 
 # uses SHA-1
