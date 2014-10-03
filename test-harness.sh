@@ -106,6 +106,8 @@ ssh "$HOSTPRECISE" sudo /mnt/sap/util/setrate.sh "${BITRATE}M"
 
 echo "bitrate,protocol,is_approx,nbytes,xfer_time_s,sha1sum_good,sha1sum_current" > "$OUTCSV"
 
+echo "URL of file to fetch: ${REALURL}"
+
 # collect precise data
 sudo /mnt/sap/util/rxmode-normal.sh
 ssh "$HOSTPRECISE" sudo /mnt/sap/util/rxmode-normal.sh
