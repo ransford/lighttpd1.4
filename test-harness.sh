@@ -1,19 +1,25 @@
 #!/bin/sh
 
-if [ $# -ne 5 ]; then
-	echo "Usage: $0 host host-precise jpegpfx nruns out.csv"             >&2
-	echo "e.g.: test-harness.sh tabinet-wifi tabinet foo 10 all-foo.csv" >&2
+if [ $# -ne 4 ]; then
+	echo "Usage: $0 host host-precise jpegpfx distance(m) nruns" >&2
+	echo " e.g.: $0 tabinet-wifi tabinet foo 8 10"     >&2
 	exit 127
 fi
 
 HOST=${1:-localhost}; shift
 HOSTPRECISE=${1:-localhost}; shift
 JPEG=${1:-fox}; shift
+DISTANCE=$1; shift
+NRUNS=${1:-10}; shift
+
 PORT=8099
 REALURL="http://${HOST}:${PORT}/${JPEG}.jpg"
 PRECISEURL="http://${HOSTPRECISE}:${PORT}/${JPEG}.jpg"
-NRUNS=${1:-10}; shift
-OUTCSV=${1:-out.csv}; shift
+
+GITREV=$(git rev-parse HEAD)
+MYHOST=$(hostname -s)
+OUTCSV="results/${MYHOST}-${HOSTPRECISE}-${DISTANCE}m-${NRUNS}trials-${GITREV}.csv"
+mkdir -p results
 
 # uses SHA-1
 shafile () {
@@ -92,6 +98,9 @@ do_run_approx_sap () {
 	return 0
 }
 
+echo "URL of file to fetch: ${REALURL}"
+echo "URL of file to fetch for cache warming: ${PRECISEURL}"
+
 # warm the cache
 for x in $(seq 1 ${WARMUPTRIALS}); do
 	echo -n "warming cache, trial $x... "
@@ -105,8 +114,6 @@ sudo /mnt/sap/util/setrate.sh "${BITRATE}M"
 ssh "$HOSTPRECISE" sudo /mnt/sap/util/setrate.sh "${BITRATE}M"
 
 echo "bitrate,protocol,is_approx,nbytes,xfer_time_s,sha1sum_good,sha1sum_current" > "$OUTCSV"
-
-echo "URL of file to fetch: ${REALURL}"
 
 # collect precise data
 sudo /mnt/sap/util/rxmode-normal.sh
