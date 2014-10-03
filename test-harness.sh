@@ -35,6 +35,16 @@ filesize () {
 	return $?
 }
 
+colorecho () {
+	MSG=$1; shift
+	/bin/echo -e "\033[1;37m${MSG}\033[0m"
+}
+
+colorechobad () {
+	MSG=$1; shift
+	/bin/echo -e "\033[1;31m${MSG}\033[0m"
+}
+
 # SHA-1 of target file
 SHA1GOOD=$(shafile htdocs/"${JPEG}".jpg)
 
@@ -45,12 +55,12 @@ do_run_precise_tcp () {
 	rm -f "$JPGF"
 	TIMINGS=$(
 		echo "print %{time_total} - %{time_starttransfer}\\\\n" | \
-			curl -s -w '@-' -o "$JPGF" "$REALURL"
+			curl -# -w '@-' -o "$JPGF" "$REALURL"
 		)
 	TIMINGP=$(perl -e "$TIMINGS")
 	SHA1NOW=$(shafile "$JPGF")
 	SIZENOW=$(filesize "$JPGF")
-	CSVLINE="${BITRATE},TCP,F,${SIZENOW},${TIMINGP},${SHA1GOOD},${SHA1NOW}"
+	CSVLINE="${BITRATE},${DISTANCE},TCP,F,${SIZENOW},${TIMINGP},${SHA1GOOD},${SHA1NOW}"
 	echo "$CSVLINE"
 	test "$SHA1GOOD" = "$SHA1NOW"
 	return $?
@@ -63,14 +73,14 @@ do_run_precise_sap () {
 	rm -f "$JPGF"
 	./libsap/examples/recvfile/recvfile \
 		"htdocs/${JPEG}.jpg" "$JPGF" 2>"${LOGFILE}" &
-	curl -s -o "${JPGF}.deleteme" -H 'X-SAP-Approx: image/jpeg' -H 'X-SAP-Force-Precise: True' "$REALURL"
+	curl -# -o "${JPGF}.deleteme" -H 'X-SAP-Approx: image/jpeg' -H 'X-SAP-Force-Precise: True' "$REALURL"
 	wait # best command ever
 	TIME_US=$(tail -1 "${LOGFILE}" | grep 'Elapsed' | grep -o '[0-9]\+')
 	if [ -z "$TIME_US" ]; then return 1; fi
 	TIME_S=$(perl -e "print $TIME_US / 1e6")
 	SHA1NOW=$(shafile "$JPGF")
 	SIZENOW=$(filesize "$JPGF")
-	CSVLINE="${BITRATE},SAP (Precise),F,${SIZENOW},${TIME_S},${SHA1GOOD},${SHA1NOW}"
+	CSVLINE="${BITRATE},${DISTANCE},SAP (Precise),F,${SIZENOW},${TIME_S},${SHA1GOOD},${SHA1NOW}"
 	echo "$CSVLINE"
 	test "$SHA1GOOD" = "$SHA1NOW"
 	return 0
@@ -83,7 +93,7 @@ do_run_approx_sap () {
 	rm -f "$JPGF"
 	./libsap/examples/recvfile/recvfile \
 		"htdocs/${JPEG}.jpg" "$JPGF" 2>"${LOGFILE}" &
-	curl -s -o "${JPGF}.deleteme" -H 'X-SAP-Approx: image/jpeg' "$REALURL"
+	curl -# -o "${JPGF}.deleteme" -H 'X-SAP-Approx: image/jpeg' "$REALURL"
 	wait # best command ever
 	TIME_US=$(tail -1 "${LOGFILE}" | grep 'Elapsed' | grep -o '[0-9]\+')
 	echo "got TIME_US=${TIME_US}" >&2
@@ -92,18 +102,18 @@ do_run_approx_sap () {
 	TIME_S=$(perl -e "print $TIME_US / 1e6")
 	SHA1NOW=$(shafile "$JPGF")
 	SIZENOW=$(filesize "$JPGF")
-	CSVLINE="${BITRATE},SAP (Approx),T,${SIZENOW},${TIME_S},${SHA1GOOD},${SHA1NOW}"
+	CSVLINE="${BITRATE},${DISTANCE},SAP (Approx),T,${SIZENOW},${TIME_S},${SHA1GOOD},${SHA1NOW}"
 	echo "$CSVLINE"
 	return 0
 }
 
-echo "URL of file to fetch: ${REALURL}"
-echo "URL of file to fetch for cache warming: ${PRECISEURL}"
+colorecho "URL of file to fetch: ${REALURL}"
+colorecho "URL of file to fetch for cache warming: ${PRECISEURL}"
 
 # warm the cache
 for x in $(seq 1 ${WARMUPTRIALS}); do
-	echo -n "warming cache, trial $x... "
-	curl --fail --silent -o /dev/null "$PRECISEURL" && echo "done."
+	colorecho "warming cache, trial $x... "
+	curl --fail -# -o /dev/null "$PRECISEURL" && colorecho "done."
 done
 
 ##### ==================================================================== #####
@@ -112,24 +122,24 @@ done
 sudo /mnt/sap/util/setrate.sh "${BITRATE}M"
 ssh "$HOSTPRECISE" sudo /mnt/sap/util/setrate.sh "${BITRATE}M"
 
-echo "bitrate,protocol,is_approx,nbytes,xfer_time_s,sha1sum_good,sha1sum_current" > "$OUTCSV"
+echo "bitrate_mbps,distance_m,protocol,is_approx,nbytes,xfer_time_s,sha1sum_good,sha1sum_current" > "$OUTCSV"
 
 # collect precise data
 sudo /mnt/sap/util/rxmode-normal.sh
 ssh "$HOSTPRECISE" sudo /mnt/sap/util/rxmode-normal.sh
 for x in `seq 1 ${NRUNS}`; do
-	echo -n "doing precise TCP run, trial $x... "
+	colorecho "doing precise TCP run, trial $x... "
 	do_run_precise_tcp $x >> "$OUTCSV"
-	if [ $? -eq 0 ]; then echo "done."; else echo "ERROR!"; fi
+	if [ $? -eq 0 ]; then colorecho "done."; else colorechobad "ERROR!"; fi
 	sleep 1
 done
 
 sudo /mnt/sap/util/rxmode-normal.sh
 ssh "$HOSTPRECISE" sudo /mnt/sap/util/rxmode-normal.sh
 for x in `seq 1 ${NRUNS}`; do
-	echo -n "doing precise SAP run, trial $x... "
+	colorecho "doing precise SAP run, trial $x... "
 	do_run_precise_sap $x >> "$OUTCSV"
-	if [ $? -eq 0 ]; then echo "done."; else echo "ERROR!"; fi
+	if [ $? -eq 0 ]; then colorecho "done."; else colorechobad "ERROR!"; fi
 	sleep 1
 done
 
@@ -137,8 +147,8 @@ done
 sudo /mnt/sap/util/rxmode-badfcs.sh
 ssh "$HOSTPRECISE" sudo /mnt/sap/util/rxmode-badfcs.sh
 for x in `seq 1 ${NRUNS}`; do
-	echo -n "doing approx SAP run, trial $x... "
+	colorecho "doing approx SAP run, trial $x... "
 	do_run_approx_sap $x >> "$OUTCSV"
-	if [ $? -eq 0 ]; then echo "done."; else echo "ERROR!"; fi
+	if [ $? -eq 0 ]; then colorecho "done."; else colorechobad "ERROR!"; fi
 	sleep 1
 done
