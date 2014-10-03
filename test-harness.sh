@@ -60,7 +60,7 @@ do_run_precise_sap () {
 		"htdocs/${JPEG}.jpg" "$JPGF" 2>"${LOGFILE}" &
 	curl -s -o "${JPGF}.deleteme" -H 'X-SAP-Approx: image/jpeg' -H 'X-SAP-Force-Precise: True' "$REALURL"
 	wait # best command ever
-	TIME_US=$(tail -1 "${LOGFILE}" | grep -o '[0-9]\+')
+	TIME_US=$(tail -1 "${LOGFILE}" | grep 'Elapsed' | grep -o '[0-9]\+')
 	if [ -z "$TIME_US" ]; then return 1; fi
 	TIME_S=$(perl -e "print $TIME_US / 1e6")
 	SHA1NOW=$(shafile "$JPGF")
@@ -80,7 +80,7 @@ do_run_approx_sap () {
 		"htdocs/${JPEG}.jpg" "$JPGF" 2>"${LOGFILE}" &
 	curl -s -o "${JPGF}.deleteme" -H 'X-SAP-Approx: image/jpeg' "$REALURL"
 	wait # best command ever
-	TIME_US=$(tail -1 "${LOGFILE}" | grep -o '[0-9]\+')
+	TIME_US=$(tail -1 "${LOGFILE}" | grep 'Elapsed' | grep -o '[0-9]\+')
 	echo "got TIME_US=${TIME_US}" >&2
 	tail -1 "${LOGFILE}" >&2
 	if [ -z "$TIME_US" ]; then return 1; fi
