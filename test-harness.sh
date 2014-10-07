@@ -22,6 +22,11 @@ MYHOST=$(hostname -s)
 OUTCSV="results/${MYHOST}-${HOSTPRECISE}-${BITRATE}M-${DISTANCE}m-${NRUNS}trials-${GITREV}.csv"
 mkdir -p results
 
+if [ -f "$OUTCSV" ]; then
+	echo "ERROR: $OUTCSV already exists; refusing to overwrite" >&2
+	exit 1
+fi
+
 # uses SHA-1
 shafile () {
 	FI=$1; shift
