@@ -123,14 +123,14 @@ done
 
 ##### ==================================================================== #####
 
+echo "bitrate_mbps,distance_m,protocol,is_approx,nbytes,xfer_time_s,sha1sum_good,sha1sum_current" > "$OUTCSV"
+
 for BITRATE in $BITRATES; do
 	colorecho "Setting bitrate to $BITRATE Mbps"
 
 # prep: rxmode, bitrate
 sudo /mnt/sap/util/setrate.sh "${BITRATE}M"
 ssh "$HOSTPRECISE" sudo /mnt/sap/util/setrate.sh "${BITRATE}M"
-
-echo "bitrate_mbps,distance_m,protocol,is_approx,nbytes,xfer_time_s,sha1sum_good,sha1sum_current" > "$OUTCSV"
 
 # collect precise data
 sudo /mnt/sap/util/rxmode-normal.sh
